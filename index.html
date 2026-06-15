@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Freedesign M&E Shop - ระบบเลือกซื้อสินค้าออนไลน์และสั่งจอง</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8/dist/umd/supabase.js"></script>
+</head>
+<body class="bg-gray-50 text-slate-800 font-sans min-h-screen flex flex-col lg:flex-row">
+
+    <aside class="w-full lg:w-72 bg-white border-b lg:border-b-0 lg:border-r border-gray-200 p-6 flex flex-col justify-between shrink-0 shadow-sm">
+        <div class="space-y-6">
+            <div class="p-2 bg-gray-50 rounded-xl border border-gray-200 flex justify-center items-center">
+                <img src="Free design.jpg" alt="Free Design Logo" class="max-h-16 object-contain">
+            </div>
+            
+            <hr class="border-gray-200">
+
+            <div class="bg-gray-50 border border-gray-200 p-4 rounded-xl space-y-3">
+                <h2 class="text-sm font-bold text-slate-900 flex items-center gap-1.5">🏢 ร้านค้าอย่างเป็นทางการ</h2>
+                <div>
+                    <p class="text-[10px] text-gray-400 uppercase font-semibold">ชื่อร้าน</p>
+                    <p class="text-xs font-bold text-slate-800">Freedesign M&E Shop</p>
+                </div>
+                <div>
+                    <p class="text-[10px] text-gray-400 uppercase font-semibold">ที่อยู่</p>
+                    <p class="text-xs text-slate-600 leading-relaxed">678/1 ม.4 ต.บ้านเป็ด อ.เมืองขอนแก่น จ.ขอนแก่น 40000</p>
+                </div>
+                <div>
+                    <p class="text-[10px] text-gray-400 uppercase font-semibold">เบอร์โทรติดต่อ</p>
+                    <p class="text-xs font-mono font-bold text-slate-800">0800952874</p>
+                </div>
+                <div>
+                    <p class="text-[10px] text-gray-400 uppercase font-semibold">Email</p>
+                    <p class="text-xs font-mono text-blue-600 break-all">freedesign.678@gmail.com</p>
+                </div>
+            </div>
+
+            <hr class="border-gray-200">
+
+            <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl space-y-2.5 shadow-sm">
+                <h3 class="text-xs font-bold text-blue-900 flex items-center gap-1">🔍 ติดตามสถานะสินค้า</h3>
+                <p class="text-[11px] text-blue-700 leading-tight">กรอกเบอร์โทรศัพท์ที่ใช้สั่งซื้อ เพื่อเช็กเลขที่ออเดอร์และสถานะจัดส่ง</p>
+                <input type="text" id="search-order-phone" placeholder="พิมพ์เบอร์โทรศัพท์ 10 หลัก" 
+                       class="w-full bg-white border border-blue-300 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-blue-500">
+                <button onclick="trackOrderStatus()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded-lg text-xs transition cursor-pointer text-center">
+                    📱 ตรวจสอบออเดอร์
+                </button>
+            </div>
+        </div>
+
+        <div class="mt-8 text-center lg:text-left">
+            <p class="text-[10px] text-gray-400 font-mono">© 2026 Freedesign M&E Shop</p>
+        </div>
+    </aside>
+
+    <main class="flex-1 p-6 md:p-8 overflow-y-auto">
+        
+        <div class="bg-white border border-gray-200 p-6 rounded-2xl mb-6 shadow-sm">
+            <span class="bg-emerald-50 text-emerald-600 text-xs px-2.5 py-1 rounded-full font-bold border border-emerald-200 uppercase">Catalog</span>
+            <h1 class="text-2xl font-bold text-slate-900 mt-2">🛒 ระบบเลือกซื้อสินค้าออนไลน์และสั่งจอง</h1>
+            <p class="text-sm text-gray-500">เลือกชมสินค้าวิศวกรรม คุมงานออโตเมชัน และกดใส่ตะกร้าเพื่อจองสินค้า</p>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-gray-200 mb-6 flex flex-col sm:flex-row gap-3 items-center shadow-sm">
+            <div class="flex-1 w-full">
+                <input type="text" id="search-name" oninput="loadProducts()" placeholder="🔍 พิมพ์ค้นหาชื่อสินค้าที่ต้องการ..." 
+                       class="w-full bg-gray-50 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
+            </div>
+            <div class="w-full sm:w-44">
+                <select id="page-size" onchange="currentPage=1; loadProducts()" class="w-full bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none cursor-pointer">
+                    <option value="10" selected>แสดงหน้าละ 10 ชิ้น</option>
+                    <option value="20">แสดงหน้าละ 20 ชิ้น</option>
+                    <option value="50">แสดงหน้าละ 50 ชิ้น</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-100 border-b border-gray-200 text-gray-600 text-xs font-bold uppercase tracking-wider">
+                            <th class="p-4 w-16 text-center">ภาพสินค้า</th>
+                            <th class="p-4">รายการสินค้า</th>
+                            <th class="p-4 w-32 text-right">ราคา (THB)</th>
+                            <th class="p-4 w-28 text-center">ขอข้อมูล</th> <th class="p-4 w-32 text-center">การสั่งซื้อ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="product-table-body" class="divide-y divide-gray-100 text-sm text-slate-700">
+                        </tbody>
+                </table>
+            </div>
+            
+            <div class="bg-gray-50 p-4 border-t border-gray-200 flex justify-between items-center">
+                <div class="text-xs text-gray-500 font-mono" id="pagination-info">กำลังตรวจเช็กหน้าร้าน...</div>
+                <div class="flex gap-2">
+                    <button id="prev-page-btn" onclick="changePage(-1)" class="px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg text-xs font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">◀️ ก่อนหน้า</button>
+                    <button id="next-page-btn" onclick="changePage(1)" class="px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg text-xs font-medium cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">ถัดไป ▶️</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <aside class="w-full lg:w-96 bg-white border-t lg:border-t-0 lg:border-l border-gray-200 p-6 shadow-sm shrink-0">
+        <h2 class="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">🛒 สรุปรายการสั่งจอง</h2>
+        
+        <div class="bg-blue-50 border border-blue-200 p-4 rounded-xl mb-4">
+            <div class="flex justify-between items-center">
+                <span class="text-sm font-medium text-blue-800">จำนวนสินค้าในตะกร้า:</span>
+                <span id="cart-count" class="text-sm font-bold text-blue-900 font-mono">0 ชิ้น</span>
+            </div>
+            <div class="flex justify-between items-center mt-2 pt-2 border-t border-blue-200">
+                <span class="text-base font-bold text-slate-900">ยอดชำระรวมทั้งหมด:</span>
+                <span id="cart-total" class="text-xl font-black text-blue-700 font-mono">฿0</span>
+            </div>
+        </div>
+
+        <div class="mb-4 max-h-40 overflow-y-auto space-y-2 border border-dashed border-gray-200 p-2 rounded-lg bg-gray-50 hidden" id="cart-list-container">
+            <p class="text-[11px] font-bold text-gray-400 uppercase">สินค้าที่เลือกในตะกร้า:</p>
+            <div id="cart-items-list" class="space-y-1 text-xs"></div>
+        </div>
+
+        <hr class="border-gray-200 mb-5">
+
+        <div class="space-y-4">
+            <h3 class="text-sm font-bold text-slate-800">📝 1. ข้อมูลผู้ซื้อและจัดส่ง</h3>
+            <div>
+                <label class="block text-[11px] font-semibold text-gray-500 mb-1">ชื่อผู้ติดต่อ / ชื่อบริษัท:</label>
+                <input type="text" id="customer-name" placeholder="ระบุชื่อ-นามสกุล หรือชื่อบริษัท" class="w-full bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-[11px] font-semibold text-gray-500 mb-1">เบอร์โทรศัพท์ติดต่อ:</label>
+                <input type="text" id="customer-phone" placeholder="ตัวอย่าง: 08XXXXXXXX" class="w-full bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-xs font-mono focus:outline-none focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-[11px] font-semibold text-gray-500 mb-1">ที่อยู่จัดส่งสินค้า:</label>
+                <textarea id="customer-address" rows="2" placeholder="ระบุที่อยู่จัดส่งอย่างละเอียด" class="w-full bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500"></textarea>
+            </div>
+            <div>
+                <label class="block text-[11px] font-semibold text-gray-500 mb-1">ที่อยู่ออกใบกำกับภาษี (บิล Vat) / หมายเหตุ:</label>
+                <textarea id="customer-tax-address" rows="2" placeholder="ระบุชื่อและที่อยู่ออกบิลภาษี / เลขนิติบุคคล (ถ้ามี)" class="w-full bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-blue-500"></textarea>
+            </div>
+
+            <hr class="border-gray-200 my-4">
+
+            <h3 class="text-sm font-bold text-slate-800">💳 2. ช่องทางการชำระเงิน</h3>
+            <div class="space-y-2 pt-1">
+                <label class="flex items-center gap-2.5 p-2.5 bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-100 transition">
+                    <input type="radio" name="payment-method" value="transfer" checked class="w-4 h-4 text-blue-600 focus:ring-0">
+                    <span class="text-xs font-medium text-slate-700">💵 เงินสดโอนเข้าบัญชีธนาคาร</span>
+                </label>
+                <label class="flex items-center gap-2.5 p-2.5 bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-100 transition">
+                    <input type="radio" name="payment-method" value="qrcode" class="w-4 h-4 text-blue-600 focus:ring-0">
+                    <span class="text-xs font-medium text-slate-700">📱 จ่ายผ่าน QR Code (พร้อมเพย์)</span>
+                </label>
+                <label class="flex items-center gap-2.5 p-2.5 bg-gray-50 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-100 transition">
+                    <input type="radio" name="payment-method" value="other" class="w-4 h-4 text-blue-600 focus:ring-0">
+                    <span class="text-xs font-medium text-slate-700">📞 ช่องทางอื่นๆ / ติดต่อเจ้าหน้าที่</span>
+                </label>
+            </div>
+
+            <button onclick="submitOrder()" id="btn-submit" class="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl text-sm transition shadow-md shadow-blue-600/10 cursor-pointer text-center">
+                📄 ยืนยันการสั่งจองและส่งข้อมูลบิล
+            </button>
+        </div>
+    </aside>
+
+    <div id="order-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden transform transition-all flex flex-col max-h-[85vh]">
+            <div class="bg-slate-900 p-4 flex justify-between items-center text-white shrink-0">
+                <h3 class="text-sm font-bold flex items-center gap-2">📦 รายการติดตามสถานะการสั่งซื้อ</h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-white font-bold text-lg cursor-pointer px-2">✕</button>
+            </div>
+            <div class="p-5 overflow-y-auto flex-1">
+                <p class="text-xs text-gray-500 mb-3">พบข้อมูลการจองสินค้าผูกกับเบอร์โทรศัพท์ <span id="modal-phone-lbl" class="font-bold text-slate-900 font-mono"></span> ดังนี้ครับพี่:</p>
+                
+                <div class="border border-gray-200 rounded-xl overflow-hidden bg-gray-50">
+                    <table class="w-full text-left text-xs border-collapse">
+                        <thead>
+                            <tr class="bg-gray-200 text-slate-700 font-bold border-b border-gray-300">
+                                <th class="p-3">ลำดับ / เลขที่ Order</th>
+                                <th class="p-3">วันที่สั่งซื้อ</th>
+                                <th class="p-3 text-right">ยอดรวม</th>
+                                <th class="p-3 text-center">สถานะปัจจุบัน</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modal-table-body" class="divide-y divide-gray-200 bg-white text-slate-700">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="bg-gray-50 p-3 border-t border-gray-200 flex justify-end shrink-0">
+                <button onclick="closeModal()" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-bold text-xs rounded-lg transition cursor-pointer">
+                    ✕ ปิดหน้าต่างตรวจสอบ
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // เชื่อมต่อ API ตัวเดิมของพี่นารูแซก
+        const SUPABASE_URL = 'https://gzqatienqqyashisrtdo.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_BID9_vku5tcJs1pg75tTCw_CQMIrUYZ';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let currentPage = 1;
+        let cartItems = []; // โครงสร้างตะกร้าเซฟไอดีแบบนับจำนวนได้: [{ id, name, price, qty }]
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadProducts();
+        });
+
+        // ==========================================
+        // ฟังก์ชัน: โหลดข้อมูลสินค้าคัดเฉพาะ is_visible: true มาแสดง
+        // ==========================================
+        async function loadProducts() {
+            const tableBody = document.getElementById('product-table-body');
+            const pageInfo = document.getElementById('pagination-info');
+            const pageSize = parseInt(document.getElementById('page-size').value);
+            const searchName = document.getElementById('search-name').value.trim();
+
+            try {
+                let query = supabaseClient
+                    .from('Shop_A')
+                    .select('*', { count: 'exact' })
+                    .eq('is_visible', true);
+
+                if (searchName) {
+                    query = query.ilike('product_name', `%${searchName}%`);
+                }
+
+                const fromIndex = (currentPage - 1) * pageSize;
+                const toIndex = fromIndex + pageSize - 1;
+
+                const { data, error, count } = await query
+                    .order('id', { ascending: false })
+                    .range(fromIndex, toIndex);
+
+                if (error) throw error;
+                tableBody.innerHTML = '';
+
+                if (!data || data.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="5" class="p-8 text-center text-gray-400">🔍 ขณะนี้ยังไม่มีรายการสินค้าชิ้นไหนเปิดแสดงผลหน้าร้านครับ</td></tr>`;
+                    pageInfo.innerText = `แสดง 0-0 จากทั้งหมด 0 รายการ`;
+                    return;
+                }
+
+                data.forEach(product => {
+                    const imgTag = product.product_image_url 
+                        ? `<img src="${product.product_image_url}" class="w-12 h-12 object-cover rounded-lg border border-gray-200 mx-auto">`
+                        : `<div class="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center text-[10px] text-gray-400 font-bold mx-auto">NO IMG</div>`;
+
+                    // ฟังก์ชัน "ขอข้อมูล" ผูกคอลัมน์ external_link_data ยืดหยุ่นตามสั่ง
+                    const extLink = product.external_link_data ? product.external_link_data.trim() : '';
+                    const linkButtonHtml = extLink 
+                        ? `<a href="${extLink}" target="_blank" class="inline-flex items-center px-2 py-1 bg-gray-100 hover:bg-gray-200 text-slate-700 border border-gray-300 rounded text-xs font-medium transition">📋 ขอข้อมูล</a>`
+                        : `<button onclick="alert('📢 รายการนี้กำลังอยู่ระหว่างจัดเตรียมข้อมูลสเปกเพิ่มเติมในฐานข้อมูลครับพี่!')" class="inline-flex items-center px-2 py-1 bg-gray-50 text-gray-400 border border-gray-200 rounded text-xs font-medium cursor-pointer">📋 ขอข้อมูล</button>`;
+
+                    tableBody.innerHTML += `
+                        <tr class="hover:bg-gray-50 transition duration-150">
+                            <td class="p-4">${imgTag}</td>
+                            <td class="p-4">
+                                <div class="text-slate-900 font-semibold text-sm max-w-sm md:max-w-xl truncate" title="${product.product_name}">${product.product_name}</div>
+                                <div class="text-[11px] text-gray-400 font-mono mt-0.5">รหัสชิ้นส่วน: ${product.ali_product_id}</div>
+                            </td>
+                            <td class="p-4 text-right font-mono text-slate-900 font-bold text-sm">฿${Number(product.sale_price || 0).toLocaleString()}</td>
+                            <td class="p-4 text-center">${linkButtonHtml}</td>
+                            <td class="p-4 text-center">
+                                <button onclick="addToCart(${product.id}, '${product.product_name.replace(/'/g, "\\'")}', ${product.sale_price})" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition shadow-sm cursor-pointer">
+                                    🛒 ใส่ตะกร้า
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                const displayTo = toIndex >= count ? count : toIndex + 1;
+                pageInfo.innerText = `แสดง ${fromIndex + 1}-${displayTo} จากทั้งหมด ${count} รายการ (หน้าที่ ${currentPage})`;
+                document.getElementById('prev-page-btn').disabled = (currentPage === 1);
+                document.getElementById('next-page-btn').disabled = (toIndex >= count - 1);
+
+            } catch (err) {
+                console.error(err);
+                tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500 font-mono">เกิดปัญหาดึงรายการสินค้าร้านค้า: ${err.message}</td></tr>`;
+            }
+        }
+
+        // ==========================================
+        // ฟังก์ชัน: ระบบจัดการเพิ่ม-ลบสินค้าในตะกร้า
+        // ==========================================
+        function addToCart(id, name, price) {
+            const existingItem = cartItems.find(item => item.id === id);
+            if (existingItem) {
+                existingItem.qty += 1;
+            } else {
+                cartItems.push({ id: id, name: name, price: parseInt(price), qty: 1 });
+            }
+            updateCartSummary();
+        }
+
+        function updateCartSummary() {
+            const countBox = document.getElementById('cart-count');
+            const totalBox = document.getElementById('cart-total');
+            const cartListContainer = document.getElementById('cart-list-container');
+            const cartItemsList = document.getElementById('cart-items-list');
+            
+            if (cartItems.length > 0) {
+                cartListContainer.classList.remove('hidden');
+            } else {
+                cartListContainer.classList.add('hidden');
+            }
+
+            cartItemsList.innerHTML = '';
+            let totalSum = 0;
+            let totalCount = 0;
+
+            cartItems.forEach((item, index) => {
+                totalSum += (item.price * item.qty);
+                totalCount += item.qty;
+
+                cartItemsList.innerHTML += `
+                    <div class="flex justify-between items-center text-slate-700 bg-white p-1 rounded border border-gray-100 mb-1">
+                        <span class="truncate max-w-[160px] font-medium">${item.name}</span>
+                        <div class="flex items-center gap-2 font-mono">
+                            <span class="text-blue-600 font-bold">x${item.qty}</span>
+                            <span class="text-gray-400">฿${(item.price * item.qty).toLocaleString()}</span>
+                            <button onclick="removeItem(${index})" class="text-red-500 font-bold hover:text-red-700 px-1 cursor-pointer">✕</button>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            countBox.innerText = `${totalCount} ชิ้น`;
+            totalBox.innerText = `฿${totalSum.toLocaleString()}`;
+        }
+
+        function removeItem(index) {
+            cartItems.splice(index, 1);
+            updateCartSummary();
+        }
+
+        // ==========================================
+        // ฟังก์ชัน: ยืนยันคำสั่งซื้อ รัน Running บันทึก 2 ตารางพร้อมกัน
+        // ==========================================
+        async function submitOrder() {
+            const name = document.getElementById('customer-name').value.trim();
+            const phone = document.getElementById('customer-phone').value.trim();
+            const address = document.getElementById('customer-address').value.trim();
+            const note = document.getElementById('customer-tax-address').value.trim();
+            const btnSubmit = document.getElementById('btn-submit');
+
+            if (cartItems.length === 0) {
+                alert("กรุณากดเลือกสินค้าใส่ตะกร้าอย่างน้อย 1 ชิ้นก่อนส่งใบจองครับพี่!");
+                return;
+            }
+            if (!name || !phone || !address) {
+                alert("กรุณากรอกชื่อ เบอร์โทร และที่อยู่จัดส่งให้ครบถ้วนด้วยครับพี่!");
+                return;
+            }
+
+            btnSubmit.disabled = true;
+            btnSubmit.innerText = "⏳ กำลังรันเลขบิลและบันทึกข้อมูล...";
+
+            try {
+                // รันรหัสใบสั่งขายออโต้ฟอร์แมต SO+ปี+เดือน+ลำดับ 4 หลัก
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const prefix = `SO${year}${month}`;
+
+                const { data: existingOrders, error: fetchError } = await supabaseClient
+                    .from('Orders')
+                    .select('order_no')
+                    .ilike('order_no', `${prefix}%`);
+
+                if (fetchError) throw fetchError;
+
+                let nextNumber = existingOrders.length + 1;
+                let generatedOrderNo = `${prefix}${String(nextNumber).padStart(4, '0')}`;
+                const totalAmount = cartItems.reduce((sum, item) => sum + (item.price * item.qty), 0);
+
+                // เซฟลงตารางแม่ Orders
+                const { data: newOrder, error: orderError } = await supabaseClient
+                    .from('Orders')
+                    .insert([{
+                        order_no: generatedOrderNo,
+                        customer_name: name,
+                        customer_phone: phone,
+                        customer_address: `${address} ${note ? '\nบิลVat/หมายเหตุ: ' + note : ''}`,
+                        total_amount: totalAmount,
+                        order_status: 'pending'
+                    }])
+                    .select();
+
+                if (orderError) throw orderError;
+                const insertedOrderId = newOrder[0].id;
+
+                // เซฟลงตารางลูก Order_Items แบบชุดกระจายแถว
+                const itemsToInsert = cartItems.map(item => ({
+                    order_id: insertedOrderId,
+                    product_id: item.id,
+                    product_name: item.name,
+                    quantity: item.qty,
+                    sale_price: item.price
+                }));
+
+                const { error: itemsError } = await supabaseClient
+                    .from('Order_Items')
+                    .insert(itemsToInsert);
+
+                if (itemsError) throw itemsError;
+
+                alert(`🎉 สั่งจองสำเร็จเรียบร้อยครับพี่!\n\nเลขที่ใบสั่งขาย: ${generatedOrderNo}\nยอดรวมทั้งสิ้น: ฿${totalAmount.toLocaleString()}\n\nข้อมูลส่งเข้าฐานข้อมูลเรียบร้อยครับ!`);
+                
+                // ล้างตะกร้าและฟอร์ม
+                cartItems = [];
+                updateCartSummary();
+                document.getElementById('customer-name').value = '';
+                document.getElementById('customer-phone').value = '';
+                document.getElementById('customer-address').value = '';
+                document.getElementById('customer-tax-address').value = '';
+
+            } catch (err) {
+                console.error(err);
+                alert(`เกิดข้อผิดพลาดในการบันทึกออเดอร์: ${err.message}`);
+            } finally {
+                btnSubmit.disabled = false;
+                btnSubmit.innerText = "📄 ยืนยันการสั่งจองและส่งข้อมูลบิล";
+            }
+        }
+
+        // ==========================================
+        // 🌟 ฟังก์ชันเพิ่มใหม่ตามสั่ง: ค้นหาออเดอร์ด้วยเบอร์โทร + เด้ง Popup กลางจอ
+        // ==========================================
+        async function trackOrderStatus() {
+            const inputPhone = document.getElementById('search-order-phone').value.trim();
+            const modal = document.getElementById('order-modal');
+            const modalPhoneLbl = document.getElementById('modal-phone-lbl');
+            const modalTableBody = document.getElementById('modal-table-body');
+
+            // ดักล็อกความปลอดภัย: เช็กคนไม่แจ้งเบอร์ หรือกรอกมาสั้นไป
+            if (!inputPhone || inputPhone.length < 9) {
+                alert("🚨 กรุณากรอกหมายเลขโทรศัพท์ให้ถูกต้องครบถ้วนเพื่อใช้ค้นหาด้วยครับพี่!");
+                return;
+            }
+
+            modalTableBody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-gray-400">⏳ กำลังค้นหาข้อมูลออเดอร์ในระบบ...</td></tr>`;
+            modalPhoneLbl.innerText = inputPhone;
+            modal.classList.remove('hidden'); // แสดงหน้าต่าง Popup กลางจอ
+
+            try {
+                // วิ่งไปหาข้อมูลเฉพาะแถวที่มีเบอร์โทรตรงกัน และกรองไม่นับคนที่ไม่แจ้งหมายเลขโทรศัพท์ออกไปอัตโนมัติ
+                const { data, error } = await supabaseClient
+                    .from('Orders')
+                    .select('order_no, created_at, total_amount, order_status')
+                    .eq('customer_phone', inputPhone)
+                    .not('customer_phone', 'is', null) // ความปลอดภัยชั้นที่ 1 คัดกรองตัวตนที่มีข้อมูลชัดเจน
+                    .order('id', { ascending: false });
+
+                if (error) throw error;
+
+                if (!data || data.length === 0) {
+                    modalTableBody.innerHTML = `<tr><td colspan="4" class="p-8 text-center text-red-400 font-medium">❌ ไม่พบประวัติการสั่งจองสินค้าของหมายเลขนี้ในระบบครับพี่</td></tr>`;
+                    return;
+                }
+
+                modalTableBody.innerHTML = '';
+                data.forEach((order, index) => {
+                    // แปลงวันเวลาในระบบออกมาให้สวยงามอ่านง่าย
+                    const dateObj = new Date(order.created_at);
+                    const formattedDate = dateObj.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+                    // แปลงสถานะภาษาอังกฤษในระบบให้ออกมาเป็นภาษาไทยเพื่อความเป็นมิตรต่อลูกค้าครับพี่
+                    let statusHtml = '';
+                    if (order.order_status === 'pending') {
+                        statusHtml = `<span class="bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full text-[11px] font-bold">⏳ รอตรวจสอบ</span>`;
+                    } else if (order.order_status === 'paid') {
+                        statusHtml = `<span class="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-full text-[11px] font-bold">💵 เตรียมจัดส่ง</span>`;
+                    } else if (order.order_status === 'shipped') {
+                        statusHtml = `<span class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full text-[11px] font-bold">📦 จัดส่งสินค้าแล้ว</span>`;
+                    } else {
+                        statusHtml = `<span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-[11px] font-mono">${order.order_status}</span>`;
+                    }
+
+                    modalTableBody.innerHTML += `
+                        <tr class="hover:bg-gray-50 transition">
+                            <td class="p-3 font-mono font-bold text-slate-900">${order.order_no || '-'}</td>
+                            <td class="p-3 text-gray-500">${formattedDate}</td>
+                            <td class="p-3 text-right font-mono font-semibold">฿${Number(order.total_amount || 0).toLocaleString()}</td>
+                            <td class="p-3 text-center">${statusHtml}</td>
+                        </tr>
+                    `;
+                });
+
+            } catch (err) {
+                console.error(err);
+                modalTableBody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-red-500 font-mono">เกิดปัญหาดึงระบบประวัติ: ${err.message}</td></tr>`;
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('order-modal').classList.add('hidden');
+        }
+
+        function changePage(direction) {
+            currentPage += direction;
+            loadProducts();
+        }
+    </script>
+</body>
+</html>
