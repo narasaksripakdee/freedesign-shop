@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>M&E Automation - หน้า Fetch และควบคุมสินค้าหลังบ้าน</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.8/dist/umd/supabase.js"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col md:flex-row">
+
+    <aside class="w-full md:w-80 bg-slate-800 border-b md:border-b-0 md:border-r border-slate-700 p-6 flex flex-col justify-between shrink-0">
+        <div>
+            <div class="mb-6 bg-white p-2 rounded-xl shadow-inner flex justify-center items-center">
+                <img src="Free design.jpg" alt="Free Design Logo" class="max-h-16 object-contain">
+            </div>
+            
+            <hr class="border-slate-700 mb-6">
+
+            <div class="bg-slate-900/50 border border-slate-700/60 p-4 rounded-xl space-y-3">
+                <h2 class="text-md font-bold text-orange-400 flex items-center gap-1.5">🏢 ข้อมูลติดต่อระบบ</h2>
+                <div>
+                    <p class="text-[11px] text-slate-400 uppercase tracking-wider">ชื่อร้าน</p>
+                    <p class="text-sm font-semibold text-white">Freedesign M&E Shop</p>
+                </div>
+                <div>
+                    <p class="text-[11px] text-slate-400 uppercase tracking-wider">ที่อยู่</p>
+                    <p class="text-xs text-slate-300 leading-relaxed">678/1 ม.4 ต.บ้านเป็ด อ.เมืองขอนแก่น จ.ขอนแก่น 40000</p>
+                </div>
+                <div>
+                    <p class="text-[11px] text-slate-400 uppercase tracking-wider">เบอร์โทรติดต่อ</p>
+                    <p class="text-sm font-mono text-orange-300">0800952874</p>
+                </div>
+                <div>
+                    <p class="text-[11px] text-slate-400 uppercase tracking-wider">Email</p>
+                    <p class="text-xs font-mono text-blue-400 break-all">freedesign.678@gmail.com</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-8 text-center md:text-left">
+            <p class="text-[11px] text-slate-500 font-mono">🔧 Admin Control Panel v2.5</p>
+        </div>
+    </aside>
+
+    <main class="flex-1 p-6 md:p-8 overflow-y-auto">
+        
+        <div class="bg-slate-850 border border-slate-700/70 p-6 rounded-2xl mb-8 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
+            <div>
+                <span class="bg-orange-500/10 text-orange-400 text-xs px-2.5 py-1 rounded-full font-bold border border-orange-500/20 uppercase tracking-wider">Back-end Panel</span>
+                <h1 class="text-2xl font-bold text-white mt-1.5">📥 ระบบ Fetch ข้อมูลสินค้า AliExpress</h1>
+                <p class="text-sm text-slate-400">ยิง API แกะข้อมูล คัดกรองราคา THB และตั้งสถานะแสดงผลเปิด/ปิดหน้าร้าน</p>
+            </div>
+            
+            <div class="flex w-full xl:w-auto gap-2">
+                <input type="text" id="product-id-input" placeholder="ป้อนรหัสสินค้า เช่น 1005010689534786" 
+                       class="bg-slate-950 border border-slate-600 rounded-xl px-4 py-2 text-sm text-white font-mono focus:outline-none focus:border-orange-500 w-full xl:w-72">
+                <button id="sync-btn" onclick="fetchAndSaveData()" class="bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold px-6 py-2 rounded-xl transition duration-300 cursor-pointer shadow-lg shadow-orange-500/10">
+                    🚀 ดึงข้อมูลสินค้า
+                </button>
+            </div>
+        </div>
+
+        <div id="status-box" class="mb-6 p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono text-slate-300 hidden"></div>
+
+        <div class="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-xl">
+            <div class="p-4 bg-slate-950/40 border-b border-slate-700 flex justify-between items-center">
+                <h3 class="text-sm font-bold text-slate-300 flex items-center gap-2">📋 รายการสินค้าทั้งหมดในระบบคุมงาน</h3>
+                
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-slate-400">แสดงหน้าละ:</span>
+                    <select id="page-size" onchange="currentPage=1; loadProducts()" class="bg-slate-900 border border-slate-600 rounded px-2 py-1 text-xs text-white focus:outline-none cursor-pointer">
+                        <option value="10" selected>10 รายการ</option>
+                        <option value="20">20 รายการ</option>
+                        <option value="50">50 รายการ</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-900/50 border-b border-slate-700 text-slate-400 text-xs font-bold uppercase tracking-wider">
+                            <th class="p-4 w-28 text-center">เปิดแสดงหน้า Index</th>
+                            <th class="p-4 w-16 text-center">รูปภาพ</th>
+                            <th class="p-4">รายละเอียดสินค้าดิบ</th>
+                            <th class="p-4 w-36 text-right">ราคาทุน (THB)</th>
+                            <th class="p-4 w-36 text-right">ราคาขาย (THB)</th>
+                            <th class="p-4 w-28 text-center">เปิดดูต้นทาง</th>
+                        </tr>
+                    </thead>
+                    <tbody id="product-table-body" class="divide-y divide-slate-700/40 text-sm">
+                        </tbody>
+                </table>
+            </div>
+            
+            <div class="bg-slate-950/20 p-4 border-t border-slate-700 flex flex-col sm:flex-row justify-between items-center gap-3">
+                <div class="text-xs text-slate-400 font-mono" id="pagination-info">กำลังตรวจเช็กคลังข้อมูล...</div>
+                <div class="flex gap-2">
+                    <button id="prev-page-btn" onclick="changePage(-1)" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-xs font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">◀️ ย้อนกลับ</button>
+                    <button id="next-page-btn" onclick="changePage(1)" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-xs font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">ถัดไป ▶️</button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // กำหนดการเชื่อมต่อฐานข้อมูล Supabase ของพี่นารูแซก
+        const SUPABASE_URL = 'https://gzqatienqqyashisrtdo.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_BID9_vku5tcJs1pg75tTCw_CQMIrUYZ';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let currentPage = 1;
+
+        // โหลดข้อมูลสินค้าทันทีเมื่อเปิดหน้า Fetch
+        document.addEventListener('DOMContentLoaded', () => {
+            loadProducts();
+        });
+
+        // ==========================================
+        // ฟังก์ชัน: ดึงสินค้าหลังบ้านมาโชว์ พร้อมผูกคำสั่งติ๊กส่งข้อมูลอัปเดตแบบเรียลไทม์
+        // ==========================================
+        async function loadProducts() {
+            const tableBody = document.getElementById('product-table-body');
+            const pageInfo = document.getElementById('pagination-info');
+            const pageSize = parseInt(document.getElementById('page-size').value);
+
+            try {
+                let query = supabaseClient.from('Shop_A').select('*', { count: 'exact' });
+
+                const fromIndex = (currentPage - 1) * pageSize;
+                const toIndex = fromIndex + pageSize - 1;
+
+                const { data, error, count } = await query
+                    .order('id', { ascending: false }) 
+                    .range(fromIndex, toIndex);
+
+                if (error) throw error;
+                tableBody.innerHTML = '';
+
+                if (!data || data.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-500 font-medium">❌ ยังไม่มีข้อมูลสินค้าในฐานข้อมูล Supabase</td></tr>`;
+                    pageInfo.innerText = `แสดง 0-0 จากทั้งหมด 0 รายการ`;
+                    return;
+                }
+
+                data.forEach(product => {
+                    const imgTag = product.product_image_url 
+                        ? `<img src="${product.product_image_url}" class="w-10 h-10 object-cover rounded-lg border border-slate-700 mx-auto">`
+                        : `<div class="w-10 h-10 bg-slate-700 rounded-lg flex items-center justify-center text-[9px] text-slate-400 font-bold mx-auto">NO IMG</div>`;
+
+                    // ตรวจเช็กสถานะจากคอลัมน์ is_visible ในดีบี (ถ้าไม่มีค่าหรือเป็น true ให้เช็กถูกไว้ก่อน)
+                    const isVisible = product.is_visible !== false; 
+
+                    tableBody.innerHTML += `
+                        <tr class="hover:bg-slate-700/20 transition">
+                            <td class="p-4 text-center">
+                                <label class="relative inline-flex items-center cursor-pointer justify-center">
+                                    <input type="checkbox" class="sr-only peer" ${isVisible ? 'checked' : ''} 
+                                           onchange="toggleVisibility(${product.id}, this.checked)">
+                                    <div class="w-9 h-5 bg-slate-950 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-400 after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500 peer-checked:after:bg-white"></div>
+                                </label>
+                            </td>
+                            <td class="p-4">${imgTag}</td>
+                            <td class="p-4">
+                                <div class="text-slate-100 font-medium text-xs max-w-xs md:max-w-md truncate" title="${product.product_name}">${product.product_name}</div>
+                                <div class="text-[11px] text-slate-400 font-mono mt-0.5">Ali ID: ${product.ali_product_id}</div>
+                            </td>
+                            <td class="p-4 text-right font-mono text-slate-300">฿${Number(product.cost_price || 0).toLocaleString()}</td>
+                            <td class="p-4 text-right font-mono text-orange-400 font-bold">฿${Number(product.sale_price || 0).toLocaleString()}</td>
+                            <td class="p-4 text-center">
+                                <a href="https://www.aliexpress.com/item/${product.ali_product_id}.html" target="_blank" class="px-2 py-1 bg-slate-700 hover:bg-slate-600 text-white text-xs rounded transition">🌐 ลิงก์</a>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                const displayTo = toIndex >= count ? count : toIndex + 1;
+                pageInfo.innerText = `แสดง ${fromIndex + 1}-${displayTo} จากทั้งหมด ${count} รายการ (หน้าที่ ${currentPage})`;
+                document.getElementById('prev-page-btn').disabled = (currentPage === 1);
+                document.getElementById('next-page-btn').disabled = (toIndex >= count - 1);
+
+            } catch (err) {
+                console.error(err);
+                tableBody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-red-400 font-mono">โหลดตารางล้มเหลว: ${err.message}</td></tr>`;
+            }
+        }
+
+        // ==========================================
+        // ฟังก์ชัน: อัปเดตสถานะและแจ้งเตือนกล่องข้อความเมื่อเซฟสำเร็จ
+        // ==========================================
+        async function toggleVisibility(productId, isChecked) {
+            console.log(`🔄 กำลังยิงคำสั่งอัปเดตโดยตรง -> ID: ${productId} | สเตตัส: ${isChecked}`);
+
+            try {
+                if (!productId) {
+                    alert("⚠️ บั๊กหน้าจอ: โค้ดส่งรหัสสินค้ามาเป็นค่าว่าง (undefined) ทำให้เซฟไม่ติดครับพี่!");
+                    return;
+                }
+
+                // สั่งอัปเดตข้อมูลและรอฟังคำตอบกลับจาก Supabase
+                const { data, error } = await supabaseClient
+                    .from('Shop_A')
+                    .update({ is_visible: isChecked })
+                    .eq('id', productId) // ลองตรวจเช็กว่าหัวตารางคีย์หลักใน Supabase สะกดว่า id ตัวเล็กตรงกันไหมนะครับพี่
+                    .select(); // บังคับให้ส่งข้อมูลสเตตัสตัวที่เพิ่งเซฟเสร็จกลับมาโชว์
+
+                if (error) {
+                    throw error;
+                }
+
+                // เช็กว่ามีข้อมูลถูกอัปเดตลงตารางจริงหรือไม่
+                if (!data || data.length === 0) {
+                    console.warn("⚠️ ค่ายิงไปถึงระบบจริง แต่ไม่มีแถวสินค้าไหนเปลี่ยนค่า (อาจสะกดชื่อคอลัมน์ id ผิด)");
+                    alert(`⚠️ บันทึกล้มเหลวกลางทาง!\nระบบค้นหาสินค้า ID [${productId}] ในตารางไม่เจอ ค่าเลยเด้งกลับครับพี่`);
+                    loadProducts();
+                    return;
+                }
+
+                alert(`✅ บันทึกลงฐานข้อมูลสำเร็จจริงร้อยเปอร์เซ็นต์!\nสินค้า ID [${productId}] เปลี่ยนเป็นสถานะ: ${isChecked ? "เปิดแสดงหน้าร้าน" : "ซ่อนจากหน้าร้าน"}`);
+
+            } catch (err) {
+                console.error("💥 พบ Error ค้างในระบบ:", err);
+                alert(`❌ Supabase ตีกลับคำสั่งชี้แจงว่า:\n${err.message || err}`);
+                loadProducts();
+            }
+        }
+
+        function changePage(direction) {
+            currentPage += direction;
+            loadProducts();
+        }
+
+        // ==========================================
+        // ฟังก์ชันหลัก: บดบี้ดึงข้อมูลจาก API ค่ายใหม่ พร้อมระบบคัดกรองแปลงราคาบาท (THB) แม่นยำ
+        // ==========================================
+        async function fetchAndSaveData() {
+            const btn = document.getElementById('sync-btn');
+            const statusBox = document.getElementById('status-box');
+            const productId = document.getElementById('product-id-input').value.trim();
+
+            if (!productId) {
+                alert("กรุณากรอกรหัสสินค้าก่อนครับพี่นารูแซก!");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.className = "bg-slate-600 text-slate-400 text-sm font-bold px-6 py-2 rounded-xl cursor-not-allowed";
+            statusBox.classList.remove('hidden');
+            statusBox.innerHTML = `🔄 สเต็ปที่ 1: กำลังยิง Fetch ข้อมูลจากเจ้าใหม่ล่าสุด รหัสไอดี: ${productId}...`;
+
+            try {
+                const url = `https://aliexpress-datahub.p.rapidapi.com/item_detail_6?itemId=${productId}`; 
+                const options = {
+                    method: 'GET',
+                    headers: {
+                        'x-rapidapi-key': 'd165a24123msh55a02ffa0220bafp1ae5c0jsn5d1f64a076f2',
+                        'x-rapidapi-host': 'aliexpress-datahub.p.rapidapi.com',
+                        'Content-Type': 'application/json'
+                    }
+                };
+
+                const response = await fetch(url, options);
+                const resJson = await response.json(); 
+                
+                statusBox.innerHTML = "✅ สเต็ปที่ 2: แกะกล่องโครงสร้างพัสดุสำเร็จ กำลังคำนวณแปลงเรทเงินบาท (THB)...";
+
+                let realName = resJson.result.item.title; 
+                let rawPrice = resJson.result.item.sku.def.price;
+                let costPrice = parseFloat(rawPrice);
+
+                // 🎯 🛠️ ระบบคำนวณมูลค่าสินค้าให้ตรงเงินบาทจริงตามราคาตลาด:
+                // กรณีที่ 1: หากราคาที่ส่งมาต่ำกว่า 1000 แปลว่าเป็นหน่วยเงิน USD ให้คูณเรท 35 เพื่อแปลงเป็นบาท
+                if (costPrice > 0 && costPrice < 1000) {
+                    costPrice = costPrice * 35; 
+                } 
+                // กรณีที่ 2: ดักจับราคาหลอก/ราคาปั่นหลักแสนจากจีน ให้หารทอนค่าเงินออกมาให้อยู่ในสเกลราคาตลาดจริง (เช่น ตั้งหารเผื่อไว้ 35 เท่า)
+                else if (costPrice >= 100000) {
+                    costPrice = costPrice / 35; // ทอนเรทเงินดองเวียดนามหรือค่าปั่นลงมาให้อยู่หลักพันตรงตามจริง
+                }
+
+                // กรณีระบบดึงราคาไม่ได้เลย ให้ใช้ค่าเซฟโซนกันรวน
+                if (!costPrice || costPrice === 0) { costPrice = 2000; }
+
+                // คำนวณราคาขายบวกกำไรของพี่ 1,500 บาท
+                let salePrice = costPrice + 1500;
+
+                let realImage = resJson.result.item.images[0];
+                if (realImage && realImage.startsWith('//')) {
+                    realImage = 'https:' + realImage; 
+                }
+
+                // บันทึกตัวเลขจำนวนเต็ม Math.round ปัดเศษทศนิยมออกเพื่อให้ตรงสเปกตาราง int4 บน Supabase เป๊ะๆ
+                const newProduct = {
+                    product_name: realName,
+                    ali_product_id: productId,
+                    cost_price: Math.round(costPrice), 
+                    sale_price: Math.round(salePrice), 
+                    product_image_url: realImage,
+                    is_visible: true // ให้แสดงผลเริ่มต้นเป็น true ทันทีเมื่อดึงเข้ามาใหม่
+                };
+
+                statusBox.innerHTML = `⏳ สเต็ปที่ 3: กำลังเขียนข้อมูลราคาทุนบวกราคาขายลงตาราง Supabase...`;
+
+                const { data, error } = await supabaseClient
+                    .from('Shop_A')
+                    .insert([newProduct])
+                    .select();
+
+                if (error) throw error;
+
+                statusBox.innerHTML = `🎉 ดึงสำเร็จ! เพิ่มราคาทุน ฿${Math.round(costPrice).toLocaleString()} และราคาขาย ฿${Math.round(salePrice).toLocaleString()} ลงระบบควบคุมหลังบ้านเรียบร้อยครับ`;
+                
+                currentPage = 1;
+                await loadProducts(); // รีเฟรชตารางโชว์ของใหม่บนสุดทันที
+
+            } catch (err) {
+                console.error(err);
+                statusBox.innerHTML = `❌ เกิดข้อผิดพลาดหน้างาน: ${err.message}`;
+            } finally {
+                btn.disabled = false;
+                btn.className = "bg-orange-500 hover:bg-orange-600 text-white text-sm font-bold px-6 py-2 rounded-xl transition duration-300 cursor-pointer shadow-lg shadow-orange-500/10";
+            }
+        }
+    </script>
+</body>
+</html>
